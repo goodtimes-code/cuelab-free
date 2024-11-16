@@ -1,46 +1,122 @@
+# Start (Blackout)
 4,112
+
+# And through it ALL...
 4,113
+
+# She won't forSAKE me...
 4,112
+
+# When I'm feeling...
 4,117;4,118
+
+# And AS the feeling grows...
 4,112
+
+# And through it ALL...
 4,125;5,2;5,1
+
+# She won't forSAKE me...
 4,112
+
+# Di
 5,15
+
+# Dö
 5,16
+
+# Döööö
 5,17
-4,112
+
+# Di
 5,15
+
+# Dö
 5,16
+
+# Döööö
 5,17
-4,112
+
+# Di
 5,20
+
+# Dö
 5,21
+
+# Dööö
 5,20
-4,112
+
+# Di
 5,21
+
+# Dö
 5,20
+
+# Dööö
 5,21
-4,112
+
+# Ra ta ta ta
 5,3
+
+# Aha
 5,11
+
+# Aha
 5,12
+
+# Haaa
 5,11
-5,3
-5,12
-5,11
-5,12
+
+# Bam bam
 5,25
+
+# Aha
+5,12
+
+# Aha
+5,11
+
+# Haaa
+5,12
+
+# Bam bam
+5,25
+
+# Aha
 5,13
+
+# Aha
 5,14
+
+# Haaa
 5,13
+
+# Aha
 3,91
+
+# Aha
 3,92
+
+# Haa
 3,91
+
+# And through it ALL (bis: when I come to call... 1-2-3-4)
 4,119;4,124;
+
+# 4T (Piano)
 4,112
+
+# 12T (E-Git)
 4,120
+
+# Fadeout
 4,112
+
+# Döööööööö (lang) DIII (STRINGS)
 4,121
-4,121;4,122
-#5,26
+
+# Im' loving angels inSTEAAAAAD
+5,61
+
+# Fadeout
 4,112

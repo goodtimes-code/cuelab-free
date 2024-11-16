@@ -106,16 +106,28 @@ class MidiApp(App):
 
     def build(self):
         # Main layout for the app
-        main_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
+        self.main_layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
 
-        # Larger TextInput for displaying and editing notes.txt content
-        self.notes_input = TextInput(text=load_notes(), font_size='16sp', size_hint=(1, 0.4), multiline=True)
+        # Variable to track the current mode ('playback' or 'editor')
+        self.current_mode = 'playback'
+
+        # Create a content layout to hold either the editor or playback layout
+        self.content_layout = BoxLayout(orientation='vertical', size_hint=(1, 0.9))
+
+        # Editor layout
+        self.editor_layout = BoxLayout(orientation='vertical', size_hint=(1, 1))
+
+        # TextInput for displaying and editing notes.txt content
+        self.notes_input = TextInput(text=load_notes(), font_size='16sp', multiline=True)
         # Bind the on_text event to save notes in real-time
         self.notes_input.bind(text=self.on_text_change)
-        main_layout.add_widget(self.notes_input)
+        self.editor_layout.add_widget(self.notes_input)
+
+        # Playback layout
+        self.playback_layout = BoxLayout(orientation='vertical', size_hint=(1, 1), spacing=10)
 
         # Layout to display previous, current, and next notes
-        display_layout = BoxLayout(orientation='vertical', size_hint=(1, 0.3), spacing=5)
+        display_layout = BoxLayout(orientation='vertical', size_hint=(1, 0.85), spacing=5)
 
         # Labels for previous, current, and next notes
         self.prev_label = Label(text='', font_size='16sp', halign='left', valign='middle')
@@ -130,9 +142,9 @@ class MidiApp(App):
         self.next_label.bind(size=self.next_label.setter('text_size'))
         display_layout.add_widget(self.next_label)
 
-        main_layout.add_widget(display_layout)
+        self.playback_layout.add_widget(display_layout)
 
-        # Layout for main control buttons (Next Note and Previous Note) directly above menu buttons
+        # Layout for main control buttons (Next Note and Previous Note)
         button_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint=(1, 0.15))
 
         back_button = Button(text="<<", size_hint=(0.5, 1))
@@ -143,10 +155,21 @@ class MidiApp(App):
         start_button.bind(on_release=lambda x: self.start_right())
         button_layout.add_widget(start_button)
 
-        main_layout.add_widget(button_layout)
+        self.playback_layout.add_widget(button_layout)
+
+        # Initially, add the playback_layout to the content_layout
+        self.content_layout.add_widget(self.playback_layout)
+
+        # Add the content_layout and menu_layout to the main_layout
+        self.main_layout.add_widget(self.content_layout)
 
         # Layout for the menu buttons at the bottom
-        menu_layout = BoxLayout(orientation='horizontal', spacing=5, size_hint=(1, 0.15))
+        menu_layout = BoxLayout(orientation='horizontal', spacing=5, size_hint=(1, 0.1))
+
+        # Toggle mode button
+        self.toggle_mode_button = Button(text='Edit', font_size=22, size_hint=(None, None), size=(160, 60))
+        self.toggle_mode_button.bind(on_release=lambda btn: self.toggle_mode())
+        menu_layout.add_widget(self.toggle_mode_button)
 
         reset_button = Button(text='Reset (0)', font_size=22, size_hint=(None, None), size=(160, 60))
         reset_button.bind(on_release=lambda btn: self.menu_action('reset'))
@@ -156,7 +179,8 @@ class MidiApp(App):
         quit_button.bind(on_release=lambda btn: self.stop())
         menu_layout.add_widget(quit_button)
 
-        main_layout.add_widget(menu_layout)
+        # Add the menu layout to the main layout (always at the bottom)
+        self.main_layout.add_widget(menu_layout)
 
         # Bind keyboard events
         Window.bind(on_key_down=self.on_key_down)
@@ -164,19 +188,43 @@ class MidiApp(App):
         # Initial display update and reset
         Clock.schedule_once(lambda dt: self.on_start(), 0)
 
-        return main_layout
+        return self.main_layout
 
     def on_start(self):
-        # Scroll the editor window to the top
-        self.notes_input.cursor = (0, 0)
-        self.notes_input.scroll_y = 0
         # Perform reset
         self.reset_position()
 
+    def toggle_mode(self):
+        if self.current_mode == 'playback':
+            # Switch to editor mode
+            self.current_mode = 'editor'
+            self.toggle_mode_button.text = 'Playback'
+
+            # Remove current widget from content_layout and add editor_layout
+            self.content_layout.clear_widgets()
+            self.content_layout.add_widget(self.editor_layout)
+
+            # Scroll the editor to the top
+            self.notes_input.cursor = (0, 0)
+            self.notes_input.scroll_y = 0
+
+        else:
+            # Switch to playback mode
+            self.current_mode = 'playback'
+            self.toggle_mode_button.text = 'Edit'
+
+            # Save any changes made in the editor
+            save_notes(self.notes_input.text)
+            # Update display with new notes
+            self.update_display()
+
+            # Remove current widget from content_layout and add playback_layout
+            self.content_layout.clear_widgets()
+            self.content_layout.add_widget(self.playback_layout)
+
     def on_text_change(self, instance, value):
-        # Save the content whenever text changes
-        save_notes(value)
-        print("Notes saved to notes.txt.")
+        # Optionally, you can save in real-time or wait until switching back to playback mode
+        pass
 
     def update_display(self):
         notes = parse_notes(self.notes_input.text)
@@ -190,27 +238,27 @@ class MidiApp(App):
         # Update previous note label
         if current_index > 0:
             prev_note = notes[current_index - 1]
-            prev_comments = '\n'.join(prev_note['comments'])
-            self.prev_label.text = f"{prev_comments}\n{prev_note['line']}"
+            prev_comments = '\n'.join(prev_note['comments']).strip()
+            self.prev_label.text = prev_comments if prev_comments else '-'
         else:
             self.prev_label.text = '-'
 
         # Update current note label
         current_note = notes[current_index]
-        current_comments = '\n'.join(current_note['comments'])
-        self.current_label.text = f"{current_comments}\n{current_note['line']}"
+        current_comments = '\n'.join(current_note['comments']).strip()
+        self.current_label.text = current_comments if current_comments else '-'
 
         # Update next note label
         if current_index < len(notes) - 1:
             next_note = notes[current_index + 1]
-            next_comments = '\n'.join(next_note['comments'])
-            self.next_label.text = f"{next_comments}\n{next_note['line']}"
+            next_comments = '\n'.join(next_note['comments']).strip()
+            self.next_label.text = next_comments if next_comments else '-'
         else:
             self.next_label.text = 'None'
 
     def start_right(self):
-        global current_index
         notes = parse_notes(self.notes_input.text)
+        global current_index
         if current_index < len(notes) - 1:
             current_index += 1
             play_notes(notes[current_index]['notes'])
@@ -219,8 +267,8 @@ class MidiApp(App):
             print("Reached the end of the notes.")
 
     def start_left(self):
-        global current_index
         notes = parse_notes(self.notes_input.text)
+        global current_index
         if current_index > 0:
             current_index -= 1
             play_notes(notes[current_index]['notes'])
@@ -234,8 +282,8 @@ class MidiApp(App):
 
     def reset_position(self):
         # Reset current index to the start and play the first notes
-        global current_index
         notes = parse_notes(self.notes_input.text)
+        global current_index
         if notes:
             current_index = 0
             play_notes(notes[current_index]['notes'])
@@ -255,6 +303,8 @@ class MidiApp(App):
             self.reset_position()
         elif key == 27:   # Esc key
             self.stop()
+        elif key == ord('e'):  # 'e' key to toggle editor/playback mode
+            self.toggle_mode()
 
 # Start Kivy application
 if __name__ == '__main__':
